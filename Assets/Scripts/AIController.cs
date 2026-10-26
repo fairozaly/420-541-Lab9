@@ -4,6 +4,7 @@ using UnityEngine.AI;
 public class AIController : MonoBehaviour
 {
     public NavMeshAgent Agent { get; private set; }
+    public StateMachine StateMachine { get; private set; }
     public AIAnimationController aiAnimationController { get; private set; }
     // public Animator Animator { get; private set; } // Not needed since we're not using animations
     public Transform[] Waypoints;
@@ -28,11 +29,27 @@ public class AIController : MonoBehaviour
     private float lastSeenTime = -999f;
 
 
-    // Add State Machine code Here
+    void Start() 
+    { 
+        Agent = GetComponent<NavMeshAgent>(); 
+        aiAnimationController = GetComponent<AIAnimationController>(); 
+        // Animator = GetComponent<Animator>(); // Commented out since we're not using animations 
+ 
+        StateMachine = new StateMachine(); 
+        StateMachine.AddState(new IdleState(this)); 
+        StateMachine.AddState(new PatrolState(this)); 
+        StateMachine.AddState(new ChaseState(this)); 
+        StateMachine.AddState(new AttackState(this)); // Add the new AttackState 
+ 
+        StateMachine.TransitionToState(StateType.Idle); 
+    } 
+ 
+    void Update() 
+    { 
+        StateMachine.Update(); 
+        currentState = StateMachine.GetCurrentStateType(); 
+    }
 
-
-    
-    // 
     public bool CanSeePlayer()
     {
         if (Player == null)
@@ -69,7 +86,6 @@ public class AIController : MonoBehaviour
             }
         }
     
-
         // If recently seen, still count as visible
         bool recentlySeen = Time.time - lastSeenTime < visionPersistence;
 
@@ -99,8 +115,6 @@ public class AIController : MonoBehaviour
         return false;
     }
     
-
-
     // New method to check if the AI is within attack range
     public bool IsPlayerInAttackRange()
     {
